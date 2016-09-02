@@ -1,23 +1,64 @@
-var webpack = require('webpack')
-module.exports = {
-  entry: ['./src/index.js', './src/style.css'],
+var webpack = require('webpack');
+const glob = require('glob');
+
+var config = {
+  entry: {
+    vendor: [
+      'react',
+      'react-dom'
+    ]
+  },
   output: {
-    path: './dist/',
-    filename: 'index.js'
+    path: __dirname + '/dist/js/',
+    filename: '[name].js'
   },
   module: {
-        loaders: [{
-            test: /\.js$/,
-            exclude: /node_modules/,
-            loader: 'babel',
-            query: {
-                presets: ['es2015', 'stage-0', 'react']
-            }
-        },
-        {
-            test: /\.css$/,
-            exclude: /node_modules/,
-            loader: 'style-loader!css-loader'
-        }]
+    preLoaders:[{
+        test: /\.js$/, 
+        loader: "eslint-loader", 
+        exclude: /node_modules/
+  }],
+    loaders: [
+      {
+        test: /\.js$/,
+        exclude: /node_modules/,
+        loader: 'babel',
+        query: { presets: [ 'es2015', 'stage-0', 'react' ] }
+      }
+    ]
+  },
+  eslint: {
+    configFile: './.eslintrc'
+  },
+  plugins: [
+    new webpack.optimize.CommonsChunkPlugin('vendor', 'vendor.bundle.js'),
+    new webpack.HotModuleReplacementPlugin()
+    ],
+    devServer: {
+        hot: true,
+        inline: true
     }
+};
+
+/**
+ * find entries
+ */
+var files = glob.sync('./src/js/*/index.js');
+var newEntries = files.reduce(function(memo, file) {
+  var name = /.*\/(.*?)\/index\.js/.exec(file)[1];
+  memo[name] = entry(name);
+  return memo;
+}, {});
+
+config.entry = Object.assign({}, config.entry, newEntries);
+
+/**
+ * [entry description]
+ * @param  {[type]} name [description]
+ * @return {[type]}      [description]
+ */
+function entry(name) {
+  return './src/js/' + name + '/index.js';
 }
+
+module.exports = config;
